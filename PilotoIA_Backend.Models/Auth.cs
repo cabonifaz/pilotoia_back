@@ -9,6 +9,12 @@ namespace PilotoIA_Backend.Models
     public class LoginResponse
     {
         public string Token { get; set; } = "";
-        public MensajeRespuesta Mensaje { get; set; } = new MensajeRespuesta();
+        public MensajeRespuesta Result { get; set; } = new MensajeRespuesta();
+    }
+
+    public class ValidateTokenResponse
+    {
+        public bool IsValid { get; set; }
+        public MensajeRespuesta Result { get; set; } = new MensajeRespuesta();
     }
 }

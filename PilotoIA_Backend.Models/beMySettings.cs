@@ -6,8 +6,17 @@ using System.Threading.Tasks;
 
 namespace PilotoIA_Backend.Models
 {
+    public class JwtSettings
+    {
+        public string Secret { get; set; }
+        public string Issuer { get; set; }
+        public string Audience { get; set; }
+        public int ExpireMinutes { get; set; }
+    }
+
     public class beMySettings
     {
+        public JwtSettings Jwt { get; set; }
         public string DbConnection { get; set; }
         public string Secret { get; set; }
         public string Email { get; set; }
