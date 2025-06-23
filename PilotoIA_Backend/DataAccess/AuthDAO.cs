@@ -24,13 +24,13 @@ namespace PilotoIA_Backend.DataAccess
                 using (SqlCommand oCmC = new SqlCommand())
                 {
                     oCmC.CommandType = CommandType.StoredProcedure;
-                    oCmC.CommandText = "SP_ValidarUsuario"; // Cambiar al SP verdadero
+                    oCmC.CommandText = "SP_USUARIO_LOGIN";
 
-                    oCmC.Parameters.AddWithValue("@vchUsername", username);
-                    oCmC.Parameters.AddWithValue("@vchPassword", password);
+                    oCmC.Parameters.AddWithValue("@NOMBRE_USUARIO", username);
+                    oCmC.Parameters.AddWithValue("@CLAVE_ACCESO", password);
 
                     oConn = await vgBDConeccion.AbrirModoLecturaAsync();
-                    oTran = await Task.Run<SqlTransaction>(() => oConn.BeginTransaction());
+                    oTran = await Task.Run(() => oConn.BeginTransaction());
                     oCmC.Connection = oTran.Connection;
                     oCmC.Transaction = oTran;
 
@@ -40,9 +40,8 @@ namespace PilotoIA_Backend.DataAccess
                         {
                             result = new MensajeRespuesta()
                             {
-                                Mensaje = oSqlR["Mensaje"] != DBNull.Value ? Convert.ToString(oSqlR["Mensaje"]) : string.Empty,
-                                IdMensaje = oSqlR["IdMensaje"] != DBNull.Value ? Convert.ToInt32(oSqlR["IdMensaje"]) : 0,
-                                IdTipoMensaje = oSqlR["TipoMensaje"] != DBNull.Value ? Convert.ToInt32(oSqlR["TipoMensaje"]) : 0,
+                                Mensaje = oSqlR["MENSAJE"] != DBNull.Value ? Convert.ToString(oSqlR["MENSAJE"]) ?? string.Empty : string.Empty,
+                                IdTipoMensaje = oSqlR["ID_TIPO_MENSAJE"] != DBNull.Value ? Convert.ToInt32(oSqlR["ID_TIPO_MENSAJE"]) : 0,
                             };
                         }
                     }

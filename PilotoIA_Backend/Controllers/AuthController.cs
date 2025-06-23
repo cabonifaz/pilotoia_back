@@ -5,6 +5,8 @@ using PilotoIA_Backend.DataAccess;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using PilotoIA_Backend.BusinessLogic;
+using Microsoft.Extensions.Options;
 
 namespace PilotoIA_Backend.Controllers
 {
@@ -12,15 +14,15 @@ namespace PilotoIA_Backend.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
+        private readonly AuthHandler _authHandler;
+        private readonly beMySettings vgSettings;
         private readonly ILogger<AuthController> _logger;
-        private readonly AuthDAO _authDAO;
 
-        public AuthController(IConfiguration configuration, ILogger<AuthController> logger)
+        public AuthController(IOptions<beMySettings> peSettings, ILogger<AuthController> logger)
         {
-            _configuration = configuration;
+            vgSettings = peSettings.Value;
             _logger = logger;
-            _authDAO = new AuthDAO(configuration.GetConnectionString("DefaultConnection"));
+            _authHandler = new AuthHandler(vgSettings);
         }
 
         [HttpPost("login")]
@@ -30,11 +32,10 @@ namespace PilotoIA_Backend.Controllers
             {
                 return BadRequest(new LoginResponse
                 {
-                    Mensaje = new MensajeRespuesta
+                    Result = new MensajeRespuesta
                     {
-                        IdMensaje = 0,
                         Mensaje = "Usuario y contraseña son requeridos.",
-                        IdTipoMensaje = 0 // 0 para errores
+                        IdTipoMensaje = 1
                     }
                 });
             }
@@ -42,23 +43,23 @@ namespace PilotoIA_Backend.Controllers
             try
             {
                 // Validar credenciales con la base de datos
-                var resultado = await _authDAO.ValidarCredenciales(loginRequest.Username, loginRequest.Password);
+                var resultado = await _authHandler.ValidarCredencialesAsync(loginRequest.Username, loginRequest.Password);
 
-                if (resultado.IdTipoMensaje != 1) // Asumiendo que 1 es éxito
+                if (resultado.IdTipoMensaje != 2)
                 {
                     return Unauthorized(new LoginResponse
                     {
-                        Mensaje = resultado
+                        Result = resultado
                     });
                 }
 
                 // Generar token JWT
-                var tokenInfo = GenerateToken(loginRequest.Username);
+                var tokenInfo = _authHandler.GenerateToken();
 
                 return Ok(new LoginResponse
                 {
-                    Token = tokenInfo.Token,
-                    Mensaje = resultado
+                    Token = tokenInfo,
+                    Result = resultado
                 });
             }
             catch (Exception ex)
@@ -66,7 +67,7 @@ namespace PilotoIA_Backend.Controllers
                 _logger.LogError(ex, "Error durante el login");
                 return StatusCode(500, new LoginResponse
                 {
-                    Mensaje = new MensajeRespuesta
+                    Result = new MensajeRespuesta
                     {
                         IdMensaje = -1,
                         Mensaje = "Error interno del servidor",
@@ -76,25 +77,35 @@ namespace PilotoIA_Backend.Controllers
             }
         }
 
-        private (string Token, DateTime Expiration) GenerateToken(string username)
+        [HttpGet("validar-token")]
+        public IActionResult ValidarToken([FromHeader(Name = "Authorization")] string authHeader)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
             {
-                new Claim(ClaimTypes.NameIdentifier, username),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
+                return Unauthorized(new ValidateTokenResponse
+                {
+                    Result = new MensajeRespuesta
+                    {
+                        Mensaje = "Token de autorización no proporcionado o inválido.",
+                        IdTipoMensaje = 1
+                    }
+                });
+            }
 
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpireMinutes"])),
-                signingCredentials: credentials);
+            var token = authHeader.Substring("Bearer ".Length).Trim();
+            var resultado = _authHandler.ValidarToken(token);
 
-            return (new JwtSecurityTokenHandler().WriteToken(token), token.ValidTo);
+            if (resultado.IdTipoMensaje == 2)
+            {
+                return Ok(new ValidateTokenResponse
+                {
+                    IsValid = true,
+                    Result = resultado
+                }
+                );
+            }
+
+            return Unauthorized(resultado);
         }
     }
 }
