@@ -11,6 +11,8 @@ using System;
 using NLog.Web;
 using Microsoft.OpenApi.Models;
 
+using System.Runtime.InteropServices; // Para RuntimeInformation
+
 namespace PilotoIA_Backend
 {
     public class Startup
@@ -31,7 +33,7 @@ namespace PilotoIA_Backend
             services.ConfigureSwagger();
             services.ConfigureJWT(Configuration);
 
-            // Configuración propia
+            // Configuraciï¿½n propia
             services.AddOptions();
             services.Configure<beMySettings>(Configuration.GetSection("MySettings"));
 
@@ -62,7 +64,7 @@ namespace PilotoIA_Backend
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "PilotoIA");
-                c.RoutePrefix = string.Empty; // Para que Swagger esté en "/"
+                c.RoutePrefix = string.Empty; // Para que Swagger estï¿½ en "/"
             });
 
             if (env.IsDevelopment())
@@ -73,7 +75,7 @@ namespace PilotoIA_Backend
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "PilotoIA API v1");
-                c.RoutePrefix = string.Empty; // Esto hace que Swagger esté en la raíz: http://localhost:5157/
+                c.RoutePrefix = string.Empty; // Esto hace que Swagger estï¿½ en la raï¿½z: http://localhost:5157/
             });
             //app.UseHttpsRedirection();
 
@@ -86,6 +88,12 @@ namespace PilotoIA_Backend
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapGet("/runtime-info", () =>
+            new
+            {
+                RuntimeVersion = System.Environment.Version.ToString(),
+                FrameworkDescription = RuntimeInformation.FrameworkDescription
+            });
                 endpoints.MapControllers();
             });
         }
