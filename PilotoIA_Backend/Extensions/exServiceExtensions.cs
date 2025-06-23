@@ -19,6 +19,7 @@ namespace PilotoIA_Backend.Extensions
                 options.AddPolicy("CorsPolicy", builder =>
                     builder.WithOrigins(
                         "https://lemon-ocean-0f32d2710.6.azurestaticapps.net",
+                        "https://blue-wave-0e6abdf0f.2.azurestaticapps.net",
                         "http://localhost:5173"
                         )
                     .AllowAnyMethod()
