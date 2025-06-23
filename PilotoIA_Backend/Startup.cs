@@ -11,8 +11,6 @@ using System;
 using NLog.Web;
 using Microsoft.OpenApi.Models;
 
-using System.Runtime.InteropServices; // Para RuntimeInformation
-
 namespace PilotoIA_Backend
 {
     public class Startup
@@ -88,12 +86,6 @@ namespace PilotoIA_Backend
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapGet("/runtime-info", () =>
-            new
-            {
-                RuntimeVersion = System.Environment.Version.ToString(),
-                FrameworkDescription = RuntimeInformation.FrameworkDescription
-            });
                 endpoints.MapControllers();
             });
         }
